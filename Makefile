@@ -330,8 +330,8 @@ include $(srctree)/scripts/Kbuild.include
 
 AS		= $(CROSS_COMPILE)as
 LD		= $(CROSS_COMPILE)ld
-CC		= $(CROSS_COMPILE)gcc
-CPP		= $(CC) -E
+#CC		= $(CROSS_COMPILE)gcc
+#CPP		= $(CC) -E
 AR		= $(CROSS_COMPILE)ar
 NM		= $(CROSS_COMPILE)nm
 STRIP		= $(CROSS_COMPILE)strip
@@ -375,6 +375,34 @@ KBUILD_AFLAGS   := -D__ASSEMBLY__
 KBUILD_AFLAGS_MODULE  := -DMODULE
 KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
+
+CLANG_FLAGS_TC := --sysroot=$(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/arm/arm-eabi-4.9-linaro/arm-cortex_a15-linux-gnueabihf/sysroot -B$(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.8/arm-linux-androideabi/bin 
+CLANG_FLAGS := -target armv7a-none-gnueabi \
+               -mcpu=krait \
+               -mfpu=neon-vfpv4 \
+               -marm \
+               -fvectorize-loops \
+               -ffast-math \
+               -funsafe-math-optimizations \
+               -no-integrated-as \
+               -Qunused-arguments -Wno-unknown-warning-option
+
+CC		= $(ANDROID_BUILD_TOP)/prebuilts/clang/linux-x86/host/llvm-Snapdragon_LLVM_for_Android_3.6/prebuilt/linux-x86_64/bin/clang $(CLANG_FLAGS_TC) $(CLANG_FLAGS) -std=gnu89 -Wno-gnu-folding-constant
+CPP		= $(ANDROID_BUILD_TOP)/prebuilts/clang/linux-x86/host/llvm-Snapdragon_LLVM_for_Android_3.6/prebuilt/linux-x86_64/bin/clang++ $(CLANG_FLAGS_TC) $(CLANG_FLAGS) -E
+
+KBUILD_AFLAGS += $(CLANG_FLAGS)
+KBUILD_CFLAGS += $(CLANG_FLAGS)
+KBUILD_CPPFLAGS += $(CLANG_FLAGS)
+
+KBUILD_AFLAGS_KERNEL += $(CLANG_FLAGS)
+KBUILD_CFLAGS_KERNEL += $(CLANG_FLAGS)
+
+KBUILD_AFLAGS_MODULE += $(CLANG_FLAGS)
+KBUILD_CFLAGS_MODULE += $(CLANG_FLAGS)
+
+#KBUILD_CFLAGS += -Wno-asm-operand-widths
+#KBUILD_CFLAGS += -Wno-initializer-overrides
+#KBUILD_CFLAGS += -fno-builtin
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
 KERNELRELEASE = $(shell cat include/config/kernel.release 2> /dev/null)
@@ -1249,6 +1277,8 @@ help:
 	@echo  '                    (default: $$(INSTALL_MOD_PATH)/lib/firmware)'
 	@echo  '  dir/            - Build all files in dir and below'
 	@echo  '  dir/file.[oisS] - Build specified target only'
+	@echo  '  dir/file.ll     - Build the LLVM bitcode file'
+	@echo  '                    (requires compiler support for LLVM bitcode generation)'
 	@echo  '  dir/file.lst    - Build specified mixed source/assembly target only'
 	@echo  '                    (requires a recent binutils and recent build (System.map))'
 	@echo  '  dir/file.ko     - Build module including final link'
@@ -1504,6 +1534,10 @@ endif
 %.o: %.S prepare scripts FORCE
 	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
 %.symtypes: %.c prepare scripts FORCE
+	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
+%.ll: %.c prepare scripts FORCE
+	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
+%.ll: %.S prepare scripts FORCE
 	$(Q)$(MAKE) $(build)=$(build-dir) $(target-dir)$(notdir $@)
 
 # Modules
