@@ -377,22 +377,22 @@ KBUILD_CFLAGS_MODULE  := -DMODULE
 KBUILD_LDFLAGS_MODULE := -T $(srctree)/scripts/module-common.lds
 
 CLANG_FLAGS_TC := --sysroot=$(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/arm/arm-eabi-4.9-linaro/arm-cortex_a15-linux-gnueabihf/sysroot -B$(ANDROID_BUILD_TOP)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.8/arm-linux-androideabi/bin 
-CLANG_FLAGS := -target armv7a-none-gnueabi \
+CLANG_FLAGS := -target armv7a-none-gnueabi -mno-global-merge \
                -mcpu=krait \
                -mfpu=neon-vfpv4 \
-               -marm \
-               -fvectorize-loops \
-               -ffast-math \
-               -funsafe-math-optimizations \
                -no-integrated-as \
                -Qunused-arguments -Wno-unknown-warning-option
+               #-marm \
+               #-fvectorize-loops \
+               #-ffast-math \
+               #-funsafe-math-optimizations \
 
 CC		= $(ANDROID_BUILD_TOP)/prebuilts/clang/linux-x86/host/llvm-Snapdragon_LLVM_for_Android_3.6/prebuilt/linux-x86_64/bin/clang $(CLANG_FLAGS_TC) $(CLANG_FLAGS) -std=gnu89 -Wno-gnu-folding-constant
 CPP		= $(ANDROID_BUILD_TOP)/prebuilts/clang/linux-x86/host/llvm-Snapdragon_LLVM_for_Android_3.6/prebuilt/linux-x86_64/bin/clang++ $(CLANG_FLAGS_TC) $(CLANG_FLAGS) -E
 
-MAKEFLAGS += -target armv7a-none-gnueabi \
-               -mcpu=krait \
-               -mfpu=neon-vfpv4 \
+#MAKEFLAGS += -target armv7a-none-gnueabi \
+#               -mcpu=krait \
+#               -mfpu=neon-vfpv4
 
 KBUILD_AFLAGS += $(CLANG_FLAGS)
 KBUILD_CFLAGS += $(CLANG_FLAGS)
@@ -403,6 +403,19 @@ KBUILD_CFLAGS_KERNEL += $(CLANG_FLAGS)
 
 KBUILD_AFLAGS_MODULE += $(CLANG_FLAGS)
 KBUILD_CFLAGS_MODULE += $(CLANG_FLAGS)
+
+#KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
+#KBUILD_CPPFLAGS += $(call cc-option,-Wno-unknown-warning-option,)
+#KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
+#KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)
+#KBUILD_CFLAGS += $(call cc-disable-warning, gnu)
+# Quiet clang warning: comparison of unsigned expression < 0 is always false
+#KBUILD_CFLAGS += $(call cc-disable-warning, tautological-compare)
+# CLANG uses a _MergedGlobals as optimization, but this breaks modpost, as the
+# source of a reference will be _MergedGlobals and not on of the whitelisted names.
+# See modpost pattern 2
+#KBUILD_CFLAGS += $(call cc-option, -mno-global-merge,)
+#KBUILD_CFLAGS += $(call cc-option, -fcatch-undefined-behavior)
 
 #KBUILD_CFLAGS += -Wno-asm-operand-widths
 #KBUILD_CFLAGS += -Wno-initializer-overrides
@@ -593,7 +606,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
-KBUILD_CFLAGS	+= -Ofast
+KBUILD_CFLAGS	+= -Os
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
