@@ -11,13 +11,17 @@
 	unsigned int bytes = 0, hooknum = 0, i = 0; \
 	struct { \
 		struct type##_replace repl; \
-		struct type##_standard entries[nhooks]; \
-		struct type##_error term; \
-	} *tbl = kzalloc(sizeof(*tbl), GFP_KERNEL); \
+		struct type##_standard entries[]; \
+	} *tbl; \
+	struct type##_error *term; \
+	size_t term_offset = (offsetof(typeof(*tbl), entries[nhooks]) + \
+		__alignof__(*term) - 1) & ~(__alignof__(*term) - 1); \
+	tbl = kzalloc(term_offset + sizeof(*term), GFP_KERNEL); \
 	if (tbl == NULL) \
 		return NULL; \
+	term = (struct type##_error *)&(((char *)tbl)[term_offset]); \
 	strncpy(tbl->repl.name, info->name, sizeof(tbl->repl.name)); \
-	tbl->term = (struct type##_error)typ2##_ERROR_INIT;  \
+	*term = (struct type##_error)typ2##_ERROR_INIT;  \
 	tbl->repl.valid_hooks = hook_mask; \
 	tbl->repl.num_entries = nhooks + 1; \
 	tbl->repl.size = nhooks * sizeof(struct type##_standard) + \
