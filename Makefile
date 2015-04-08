@@ -390,6 +390,10 @@ CLANG_FLAGS := -target armv7a-none-gnueabi \
 CC		= $(ANDROID_BUILD_TOP)/prebuilts/clang/linux-x86/host/llvm-Snapdragon_LLVM_for_Android_3.6/prebuilt/linux-x86_64/bin/clang $(CLANG_FLAGS_TC) $(CLANG_FLAGS) -std=gnu89 -Wno-gnu-folding-constant
 CPP		= $(ANDROID_BUILD_TOP)/prebuilts/clang/linux-x86/host/llvm-Snapdragon_LLVM_for_Android_3.6/prebuilt/linux-x86_64/bin/clang++ $(CLANG_FLAGS_TC) $(CLANG_FLAGS) -E
 
+MAKEFLAGS += -target armv7a-none-gnueabi \
+               -mcpu=krait \
+               -mfpu=neon-vfpv4 \
+
 KBUILD_AFLAGS += $(CLANG_FLAGS)
 KBUILD_CFLAGS += $(CLANG_FLAGS)
 KBUILD_CPPFLAGS += $(CLANG_FLAGS)
@@ -589,7 +593,7 @@ all: vmlinux
 ifdef CONFIG_CC_OPTIMIZE_FOR_SIZE
 KBUILD_CFLAGS	+= -Os $(call cc-disable-warning,maybe-uninitialized,)
 else
-KBUILD_CFLAGS	+= -O2
+KBUILD_CFLAGS	+= -Ofast
 endif
 
 include $(srctree)/arch/$(SRCARCH)/Makefile
